@@ -8,6 +8,11 @@ class GUI:
         "Exotic"
     ]
 
+    call_put_options = [
+        "Call",
+        "Put"
+    ]
+
     vanilla_options = [
         "European",
         "American"
@@ -63,48 +68,54 @@ class GUI:
         self.specific_option_dropdown = ttk.Combobox(self.input_frame, textvariable=self.specific_option_var, state='readonly')
         self.specific_option_dropdown.grid(column=1, row=1)
 
+        ttk.Label(self.input_frame, text="Call/Put:").grid(column=0, row=2)
+        self.call_put_var = tk.StringVar(self.input_frame)
+        self.call_put_dropdown = ttk.Combobox(self.input_frame, textvariable=self.call_put_var, state='readonly',
+            values=self.call_put_options)
+        self.call_put_dropdown.grid(column=1, row=2)
+
         ## Taking of underlying price, strike, interest rate, volatility, TTE, Dividend yield
 
-        ttk.Label(self.input_frame, text="Underlying Price:").grid(column=0, row=2)
+        ttk.Label(self.input_frame, text="Underlying Price:").grid(column=0, row=3)
         self.underlyingPrice_var = tk.StringVar(self.input_frame)
         self.entry_underlyingPrice = ttk.Entry(self.input_frame, textvariable=self.underlyingPrice_var, width=10)
-        self.entry_underlyingPrice.grid(column=1, row=2, sticky=(tk.W, tk.E))
+        self.entry_underlyingPrice.grid(column=1, row=3, sticky=(tk.W, tk.E))
         self.entry_underlyingPrice.bind("<KeyRelease>", lambda event: self.validate_input(self.underlyingPrice_var))
 
-        ttk.Label(self.input_frame, text="Strike Price:").grid(column=0, row=3)
+        ttk.Label(self.input_frame, text="Strike Price:").grid(column=0, row=4)
         self.strikePrice_var = tk.StringVar(self.input_frame)
         self.entry_strikePrice = ttk.Entry(self.input_frame, textvariable=self.strikePrice_var, width=10)
-        self.entry_strikePrice.grid(column=1, row=3, sticky=(tk.W, tk.E))
+        self.entry_strikePrice.grid(column=1, row=4, sticky=(tk.W, tk.E))
         self.entry_strikePrice.bind("<KeyRelease>", lambda event: self.validate_input(self.strikePrice_var))
 
-        ttk.Label(self.input_frame, text="Interest Rate:").grid(column=0, row=4)
+        ttk.Label(self.input_frame, text="Interest Rate:").grid(column=0, row=5)
         self.interestRate_var = tk.StringVar(self.input_frame)
         self.entry_interestRate = ttk.Entry(self.input_frame, textvariable=self.interestRate_var, width=10)
-        self.entry_interestRate.grid(column=1, row=4, sticky=(tk.W, tk.E))
+        self.entry_interestRate.grid(column=1, row=5, sticky=(tk.W, tk.E))
         self.entry_interestRate.bind("<KeyRelease>", lambda event: self.validate_input(self.interestRate_var))
-        self.percent_label = ttk.Label(self.input_frame, text="%")
-        self.percent_label.grid(column=2, row=4, sticky=tk.W)
-
-        ttk.Label(self.input_frame, text="Volatility:").grid(column=0, row=5)
-        self.volatility_var = tk.StringVar(self.input_frame)
-        self.entry_volatility = ttk.Entry(self.input_frame, textvariable=self.volatility_var, width=10)
-        self.entry_volatility.grid(column=1, row=5, sticky=(tk.W, tk.E))
-        self.entry_volatility.bind("<KeyRelease>", lambda event: self.validate_input(self.volatility_var))
         self.percent_label = ttk.Label(self.input_frame, text="%")
         self.percent_label.grid(column=2, row=5, sticky=tk.W)
 
-        ttk.Label(self.input_frame, text="Dividend Yield:").grid(column=0, row=6)
-        self.dividend_var = tk.StringVar(self.input_frame)
-        self.entry_dividend = ttk.Entry(self.input_frame, textvariable=self.dividend_var, width=10)
-        self.entry_dividend.grid(column=1, row=6, sticky=(tk.W, tk.E))
-        self.entry_dividend.bind("<KeyRelease>", lambda event: self.validate_input(self.dividend_var))
+        ttk.Label(self.input_frame, text="Volatility:").grid(column=0, row=6)
+        self.volatility_var = tk.StringVar(self.input_frame)
+        self.entry_volatility = ttk.Entry(self.input_frame, textvariable=self.volatility_var, width=10)
+        self.entry_volatility.grid(column=1, row=6, sticky=(tk.W, tk.E))
+        self.entry_volatility.bind("<KeyRelease>", lambda event: self.validate_input(self.volatility_var))
         self.percent_label = ttk.Label(self.input_frame, text="%")
         self.percent_label.grid(column=2, row=6, sticky=tk.W)
 
-        ttk.Label(self.input_frame, text="Time to Expiration:").grid(column=0, row=7)
+        ttk.Label(self.input_frame, text="Dividend Yield:").grid(column=0, row=7)
+        self.dividend_var = tk.StringVar(self.input_frame)
+        self.entry_dividend = ttk.Entry(self.input_frame, textvariable=self.dividend_var, width=10)
+        self.entry_dividend.grid(column=1, row=7, sticky=(tk.W, tk.E))
+        self.entry_dividend.bind("<KeyRelease>", lambda event: self.validate_input(self.dividend_var))
+        self.percent_label = ttk.Label(self.input_frame, text="%")
+        self.percent_label.grid(column=2, row=7, sticky=tk.W)
+
+        ttk.Label(self.input_frame, text="Time to Expiration:").grid(column=0, row=8)
         self.TTE_var = tk.StringVar(self.input_frame)
         self.entry_TTE = ttk.Entry(self.input_frame, textvariable=self.TTE_var, width=10)
-        self.entry_TTE.grid(column=1, row=7, sticky=(tk.W, tk.E))
+        self.entry_TTE.grid(column=1, row=8, sticky=(tk.W, tk.E))
         self.entry_TTE.bind("<KeyRelease>", lambda event: self.validate_input(self.TTE_var))
 
 
