@@ -4,6 +4,7 @@ from scipy.optimize import basinhopping
 import matplotlib.pyplot as plt
 from auxillary_functions import simulate_paths
 from scipy.optimize import minimize
+import time
 
 class EuropeanOption:
     def __init__(self, S: float, K: float, r: float, q: float, sigma: float, T: float, option_type: str):
@@ -21,19 +22,19 @@ class EuropeanOption:
     def d2(self):
         return self.d1() - self.sigma * np.sqrt(self.T)
     
-    def price(self):
+    def price_european(self):
         d1 = self.d1()
         d2 = self.d2()
         if self.option_type == "call":
-            price = np.exp(-self.r * self.T) * (self.S * np.exp((self.r - self.q) * self.T) * norm.cdf(d1) - self.K * norm.cdf(d2))
+            price = self.S * norm.cdf(d1) - self.K * np.exp(-self.r * self.T) * norm.cdf(d2)
         elif self.option_type == "put":
-            price = np.exp(-self.r * self.T) * (self.K * norm.cdf(-d2) - self.S * np.exp((self.r - self.q) * self.T) * norm.cdf(-d1))
+            price = self.K * np.exp(-self.r * self.T) * norm.cdf(-d2) - self.S * norm.cdf(-d1)
         else:
             raise ValueError("Option type must be 'call' or 'put'")
         return price
 
 class AmericanOption:
-    def __init__(self, S: float, mu: float, sigma: float, q: float, r: float, K: float, T: float, N: int, sims: int, option_type: str):
+    def __init__(self, S: float, mu: float, sigma: float, q: float, r: float, K: float, T: float, sims: int, option_type: str):
         self.S = S
         self.mu = mu
         self.sigma = sigma
@@ -41,7 +42,6 @@ class AmericanOption:
         self.r = r
         self.K = K
         self.T = T
-        self.N = N  # Number of steps from t=0 to t=T
         self.sims = sims
         self.option_type = option_type
         self.paths = None # Generated paths used to define the exercise-boundary
@@ -50,6 +50,10 @@ class AmericanOption:
         self.cleanBoundary = None
         self.exerciseBoundary = None
         self.stoppingTimes = None
+        if self.T >= 1:
+            self.N = 100 * T
+        elif self.T <1:
+            self.N = 100
     
     # Payoff of the option at time t=tau, the stopping time given the stopping rules
     def payoff(self, S_tau):
@@ -98,7 +102,7 @@ class AmericanOption:
             initial_guess = np.linspace(self.S * (1 + 2*self.sigma), self.K, self.N+1)
         elif self.option_type == "put":
             initial_guess = np.linspace(self.S * (1 - 2*self.sigma), self.K, self.N+1)
-        result = basinhopping(self.objective, x0=initial_guess, minimizer_kwargs={'method':'Powell'}, niter=int(round((N+1)/20,0)), disp = False) # REMEMBER TO CHANGE BACK TO /5
+        result = basinhopping(self.objective, x0=initial_guess, minimizer_kwargs={'method':'Powell'}, niter=25, disp = False)
         return result.x
     
     # Cleans significant outliers as to not distort the fitting of the softer-trendline; avoids overfitting to n1 sample
@@ -138,7 +142,7 @@ class AmericanOption:
         polynomial = np.polyval(coeffs, x)
         return polynomial
 
-    def price(self):
+    def price_american(self):
         self.paths = self.path_generation()
         self.optimalBoundary = self.optimize_boundary()
         self.cleanBoundary = self.cleaned_boundary(2)
@@ -151,6 +155,61 @@ class AmericanOption:
         price = np.mean(discounted_payoffs)
         return price
         
+class BinaryOption:
+    def __init__(self, S: float, K: float, r: float, q: float, sigma: float, T: float, option_type: str):
+        self.S = S
+        self.K = K
+        self.r = r
+        self.q = q
+        self.sigma = sigma
+        self.T = T
+        self.option_type = option_type
+
+    def alpha(self):
+        return (np.log(self.S/self.K) + (self.r-self.q-0.5*self.sigma**2)*self.T)/self.sigma*np.sqrt(self.T)
+    
+    def price_binary(self):
+        if self.option_type == "call":
+            alpha = self.alpha()
+        elif self.option_type == "put":
+            alpha = -1*self.alpha()
+        else:
+            raise ValueError("Option type must be 'call' or 'put'")
+        price = np.exp(-self.r * self.T) * norm.cdf(alpha)
+        return price
+
+class AsianOption(): # Arithmetic average
+    def __init__(self, S: float, K: float, r: float, q: float, sigma: float, T: float, option_type: str):
+        self.S = S
+        self.K = K
+        self.r = r
+        self.q = q
+        self.sigma = sigma
+        self.T = T
+        self.option_type = option_type
+    
+    def sigma_adjusted(self):
+        return self.sigma/np.sqrt(3)
+    
+    def drift_term(self):
+        return 0.5 * (self.r - 0.5 * self.sigma_adjusted())**2
+
+    def d1(self):
+        return (np.log(self.S/self.K) + (self.drift_term() + 0.5 * self.sigma_adjusted()**2) * self.T)  /(self.sigma_adjusted() * np.sqrt(self.T))
+    
+    def d2(self):
+        return self.d1() - self.sigma_adjusted() * np.sqrt(self.T)
+    
+    def price_asian(self):
+        d1 = self.d1()
+        d2 = self.d2()
+        if self.option_type == "call":
+            price = self.S * np.exp((self.drift_term() - self.r) * self.T) * norm.cdf(d1) - self.K * np.exp(-self.r * self.T) * norm.cdf(d2)
+        elif self.option_type == "put":
+            price = self.K * np.exp(-self.r * self.T) * norm.cdf(-d2) - self.S * np.exp((self.drift_term() - self.r) * self.T) * norm.cdf(-d1) 
+        else:
+            raise ValueError("Option type must be 'call' or 'put'")
+        return price
 ## TESTING
 
 if __name__ == "__main__":
@@ -161,11 +220,7 @@ if __name__ == "__main__":
     r = 0.03    
     K = 100     
     T = 1       
-    N = 1000
-    sims = 1000
-    option_type = "call"
+    sims = 10000
+    option_type = "put"
 
-    american_option = AmericanOption(S, mu, sigma, q, r, K, T, N, sims, option_type)
-    print(american_option.price())
-    european_option = EuropeanOption(S,K,r,q,sigma,T,option_type)
-    print(european_option.price())
+    
