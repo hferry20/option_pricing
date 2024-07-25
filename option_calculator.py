@@ -212,7 +212,7 @@ class AsianOption: # Arithmetic average
         return price
 
 class BarrierOption:
-    
+    pass
 
 ## TESTING
 
