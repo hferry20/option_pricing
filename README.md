@@ -1,5 +1,9 @@
 # Option Pricing
 
+## Utilisation of Application
+
+## Mathematical Methodologies Utilised
+
 ## References:
 ### Textbooks:
 
