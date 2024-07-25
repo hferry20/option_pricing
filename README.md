@@ -2,7 +2,11 @@
 
 ## Utilisation of Application
 
-## Mathematical Methodologies Utilised
+## Mathematical Methodologies Applied
+
+### Analytical
+
+### Numerical
 
 ## References:
 ### Textbooks:
@@ -13,6 +17,8 @@
 4. Monte Carlo Methods in Financial Engineering. P, Glasserman
 5. Tools for Computational Finance. R, Seydel
 
-### Research Papers:
+### Research Papers & Dissertations:
 
-1. 
+1. Pricing American Options using Simulation. K, Larsson
+2. Breaking Down the Barriers. M, Rubinstein & E, Reiner
+3. A simple recursive numerical method for Bermudan option pricing under Lévy processes. C, O'Sullivan

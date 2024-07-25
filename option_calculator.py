@@ -178,7 +178,7 @@ class BinaryOption:
         price = np.exp(-self.r * self.T) * norm.cdf(alpha)
         return price
 
-class AsianOption(): # Arithmetic average
+class AsianOption: # Arithmetic average
     def __init__(self, S: float, K: float, r: float, q: float, sigma: float, T: float, option_type: str):
         self.S = S
         self.K = K
@@ -210,6 +210,10 @@ class AsianOption(): # Arithmetic average
         else:
             raise ValueError("Option type must be 'call' or 'put'")
         return price
+
+class BarrierOption:
+    
+
 ## TESTING
 
 if __name__ == "__main__":
