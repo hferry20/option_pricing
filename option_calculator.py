@@ -1,9 +1,8 @@
 import numpy as np
 from scipy.stats import norm
-from scipy.optimize import basinhopping
+from scipy.optimize import basinhopping, minimize
 import matplotlib.pyplot as plt
-from auxillary_functions import simulate_paths
-from scipy.optimize import minimize
+from auxillary_functions import simulate_paths, norm_density, absorbed_density
 import time
 
 class EuropeanOption:
@@ -211,8 +210,37 @@ class AsianOption: # Arithmetic average
             raise ValueError("Option type must be 'call' or 'put'")
         return price
 
-class BarrierOption:
-    pass
+class BarrierOption(EuropeanOption):
+    def __init__(self, S: float, K: float, r: float, q: float, sigma: float, T: float, B: float, option_type: str, barrier_type: str):
+        super().__init__(S, K, r, q, sigma, T, option_type)
+        self.B = B
+        self.barrier_type = barrier_type
+
+    def adjusted_r(self):
+        r_tilde = self.r - self.q - 0.5*self.sigma**2
+        return r_tilde
+
+    def heaviside_func(self, x):
+        r = self.adjusted_r()
+        H = np.exp(-self.r * self.T) * norm.cdf((r*self.T + np.log(x/self.B))/(self.sigma * np.sqrt(self.T)))
+        return H
+
+    def price_down_out(self):
+        european_K = EuropeanOption(self.S, self.K, self.r, self.q, self.sigma, self.T, self.option_type)
+        european_B = EuropeanOption(self.B**2/self.S, self.K, self.r, self.q, self.sigma, self.T, self.option_type)
+        if self.B >= self.S:
+            raise ValueError("Starting underlying price equal to or less than barrier")
+        if self.option_type == "call":
+            if self.B <= self.K:
+                price = european_K.price_european() - (self.B/self.S) ** (2*self.adjusted_r()/self.sigma**2) * european_B.price_european()
+            elif self.B > self.K:
+                price = european_K.price_european() + (self.B - self.K) * self.heaviside_func(self.S) - pow(self.B/self.S, 2*self.adjusted_r()/self.sigma**2) * (european_B.price_european() + (self.B - self.K) * self.heaviside_func(self.B**2/self.S))
+        elif self.option_type == "put":
+            if self.B >= self.K:
+                price = european_K.price_european() - (self.B/self.S) ** (2*self.adjusted_r()/self.sigma**2) * european_B.price_european()
+            elif self.B < self.K:
+                price = european_K.price_european() - (self.K - self.B) * self.heaviside_func(self.S) - pow(self.B/self.S, 2*self.adjusted_r()/self.sigma**2) * (european_B.price_european() - (self.K - self.B) * self.heaviside_func(self.B**2/self.S))
+        return price
 
 ## TESTING
 
@@ -224,7 +252,11 @@ if __name__ == "__main__":
     r = 0.03    
     K = 100     
     T = 1       
+    B = 110
     sims = 10000
     option_type = "put"
 
-    
+    barrier_option = BarrierOption(S, K, r, q, sigma, T, B, option_type, "up_out")
+    print(barrier_option.price_down_out())
+    european_option = EuropeanOption(S, K, r, q, sigma, T, option_type)
+    print(european_option.price_european())

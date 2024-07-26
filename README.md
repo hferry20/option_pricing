@@ -22,3 +22,4 @@
 1. Pricing American Options using Simulation. K, Larsson
 2. Breaking Down the Barriers. M, Rubinstein & E, Reiner
 3. A simple recursive numerical method for Bermudan option pricing under Lévy processes. C, O'Sullivan
+4. Brownian motion and stochastic flow systems. J, Harrison
