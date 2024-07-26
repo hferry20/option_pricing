@@ -216,34 +216,63 @@ class BarrierOption(EuropeanOption):
         self.B = B
         self.barrier_type = barrier_type
 
-    def adjusted_r(self):
-        r_tilde = self.r - self.q - 0.5*self.sigma**2
-        return r_tilde
-
-    def heaviside_func(self, x):
-        r = self.adjusted_r()
-        H = np.exp(-self.r * self.T) * norm.cdf((r*self.T + np.log(x/self.B))/(self.sigma * np.sqrt(self.T)))
-        return H
     
-    def 
+    def price_out(self):
 
-    def price_down_out(self):
-        european_K = EuropeanOption(self.S, self.K, self.r, self.q, self.sigma, self.T, self.option_type)
-        european_B = EuropeanOption(self.B**2/self.S, self.K, self.r, self.q, self.sigma, self.T, self.option_type)
-        if self.B >= self.S:
-            raise ValueError("Starting underlying price equal to or less than barrier")
-        if self.option_type == "call":
-            if self.B <= self.K:
-                price = european_K.price_european() - (self.B/self.S) ** (2*self.adjusted_r()/self.sigma**2) * european_B.price_european()
+        def adjusted_r():
+            r_tilde = self.r - self.q - 0.5*self.sigma**2
+            return r_tilde
+
+        def heaviside_func(x):
+            r = adjusted_r()
+            H = np.exp(-self.r * self.T) * norm.cdf((r*self.T + np.log(x/self.B))/(self.sigma * np.sqrt(self.T)))
+            return H
+    
+        def black_scholes(x, K, option_type):
+            european_option = EuropeanOption(x, K, self.r, self.q, self.sigma, self.T, option_type)
+            return european_option.price_european()
+        
+        def bond():
+            return heaviside_func(self.S) - (self.B/self.S)**(2*adjusted_r()/self.sigma**2) * heaviside_func(self.B**2/self.S)
+        
+        def stock():
+            return self.B * heaviside_func(self.S) - self.B * (self.B/self.S)**(2*adjusted_r()/self.sigma**2)*heaviside_func(self.B**2/self.S) + black_scholes(self.S, self.B, "call") - (self.B/self.S)**(2*adjusted_r()/self.sigma**2) * black_scholes(self.B**2/self.S, self.B, "call")
+
+        def put_call(call):
+            put = self.K * bond() - stock() + call
+            return put
+
+        def down_out():
+            if self.B >= self.S:
+                return 0
+            elif self.B <= self.K:
+                call = black_scholes(self.S, self.K, "call") - (self.B/self.S)**(2*adjusted_r()/self.sigma**2) * black_scholes(self.B**2/self.S, self.K, "call")
+                put = put_call(call)
             elif self.B > self.K:
-                price = european_K.price_european() + (self.B - self.K) * self.heaviside_func(self.S) - pow(self.B/self.S, 2*self.adjusted_r()/self.sigma**2) * (european_B.price_european() + (self.B - self.K) * self.heaviside_func(self.B**2/self.S))
-        elif self.option_type == "put":
-            if self.B >= self.K:
-                price = european_K.price_european() - (self.B/self.S) ** (2*self.adjusted_r()/self.sigma**2) * european_B.price_european()
-            elif self.B < self.K:
-                price = european_K.price_european() - (self.K - self.B) * self.heaviside_func(self.S) - pow(self.B/self.S, 2*self.adjusted_r()/self.sigma**2) * (european_B.price_european() - (self.K - self.B) * self.heaviside_func(self.B**2/self.S))
+                call = black_scholes(self.S, self.B, "call") + (self.B - self.K) * heaviside_func(self.S) - (self.B/self.S)**(2*adjusted_r()/self.sigma**2) * (black_scholes(self.B**2/self.S, self.B, "call") + (self.B - self.K) * heaviside_func(self.B**2/self.S))
+                put = put_call(call)
+
+            if self.option_type == "call":
+                price = call
+            elif self.option_type == "put":
+                price = put
+
+            return price
+        
+        def up_out():
+            if self.S <= self.B:
+                return 0
+            elif self.B >= self.K:
+                pass
+        
+        if self.barrier_type == "down_out":
+            price = down_out()
+        elif self.barrier_type == "up_out":
+            price = up_out()
+        else:
+            raise ValueError("Incorrect barrier type")
+        
         return price
-    
 
 
 ## TESTING
@@ -252,15 +281,16 @@ if __name__ == "__main__":
     S = 100     
     mu = 0.05   
     sigma = 0.2 
-    q = 0  
+    q = 0 
     r = 0.03    
-    K = 100     
+    K = 95
     T = 1       
-    B = 110
+    B = 85
     sims = 10000
     option_type = "put"
+    barrier_type = "down_out"
 
-    barrier_option = BarrierOption(S, K, r, q, sigma, T, B, option_type, "up_out")
-    print(barrier_option.price_down_out())
-    european_option = EuropeanOption(S, K, r, q, sigma, T, option_type)
-    print(european_option.price_european())
+    barrier = BarrierOption(S, K ,r,q,sigma,T,B,option_type, barrier_type)
+    print(barrier.price_out())
+
+    
