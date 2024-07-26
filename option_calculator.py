@@ -224,6 +224,8 @@ class BarrierOption(EuropeanOption):
         r = self.adjusted_r()
         H = np.exp(-self.r * self.T) * norm.cdf((r*self.T + np.log(x/self.B))/(self.sigma * np.sqrt(self.T)))
         return H
+    
+    def 
 
     def price_down_out(self):
         european_K = EuropeanOption(self.S, self.K, self.r, self.q, self.sigma, self.T, self.option_type)
@@ -241,6 +243,8 @@ class BarrierOption(EuropeanOption):
             elif self.B < self.K:
                 price = european_K.price_european() - (self.K - self.B) * self.heaviside_func(self.S) - pow(self.B/self.S, 2*self.adjusted_r()/self.sigma**2) * (european_B.price_european() - (self.K - self.B) * self.heaviside_func(self.B**2/self.S))
         return price
+    
+
 
 ## TESTING
 
